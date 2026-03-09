@@ -235,47 +235,6 @@ class FuseBlock(nn.Module):
 
         return x
     
-# class FreqFuseBlock(nn.Module):
-#     def __init__(self, in_channel, out_channel):
-#         super().__init__()
-#         self.in_channel = in_channel
-#         self.out_channel = out_channel
-#         self.enc_conv = nn.Sequential(
-#                             nn.Conv2d(in_channel * 2, in_channel, kernel_size=3, padding=1),
-#                             ResBlock(in_channel, in_channel))
-
-#         self.gate = nn.Sequential(
-#             nn.Conv2d(in_channel, in_channel // 2, kernel_size=1),
-#             nn.ReLU(inplace=True),
-#             nn.Conv2d(in_channel // 2, in_channel, kernel_size=1),
-#             nn.Sigmoid())
-
-#         self.scale = nn.Sequential(
-#                         nn.Conv2d(in_channel, out_channel, kernel_size=3, padding=1),
-#                         nn.LeakyReLU(0.2, True),
-#                         nn.Conv2d(out_channel, out_channel, kernel_size=3, padding=1))
-
-#         self.shift = nn.Sequential(
-#                     nn.Conv2d(in_channel, out_channel, kernel_size=3, padding=1),
-#                     nn.LeakyReLU(0.2, True),
-#                     nn.Conv2d(out_channel, out_channel, kernel_size=3, padding=1))
-
-#     def forward(self, x, x_coder, weight=1.0):
-
-#         fx = torch.fft.fft2(x)
-#         fx_coder = torch.fft.fft2(x_coder)
-
-#         fx = self.enc_conv(torch.cat([fx, fx_coder], dim=1))
-
-#         fx_scale = self.scale(fx)
-#         fx_shift = self.shift(fx)
-
-#         residual = weight * (fx_scale * fx_coder + fx_shift)
-#         fx = fx + residual
-
-#         x = torch.fft.ifft2(fx)
-
-#         return x
 
 class FreqFuseBlock(nn.Module):
     def __init__(self, in_channel, out_channel):
@@ -366,19 +325,7 @@ class MultiScaleEncoder(nn.Module):
             # self.blocks.append(TransformerLayers(input_resolution=(32, 32), embed_dim=256, depth=4, 
             #                                     blk_depth=6, num_heads=8))
 
-        #     ### Decoder blocks.
-        #     upsampler = nn.ModuleList()
-        #     for i in range(2):
-        #         in_channel, out_channel = channel_query_dict[res], channel_query_dict[res * 2]
-        #         upsampler.append(nn.Sequential(
-        #             nn.Upsample(scale_factor=2),
-        #             nn.Conv2d(in_channel, out_channel, 3, stride=1, padding=1),
-        #             SPAMBlock(out_channel, out_channel),
-        #             SPAMBlock(out_channel, out_channel),
-        #             )
-        #         )
-        #         res = res * 2
-        #     self.blocks += upsampler
+        #     ### Decoder blocks
 
         # self.LQ_stage = LQ_stage
 
@@ -445,8 +392,6 @@ class DecoderBlock(nn.Module):
         self.block += [
             nn.Upsample(scale_factor=2),
             nn.Conv2d(in_channel, out_channel, 3, stride=1, padding=1),
-            # SPAMBlock(out_channel, out_channel),
-            # SPAMBlock(out_channel, out_channel),
             ResBlock(out_channel, out_channel, norm_type, act_type),
             ResBlock(out_channel, out_channel, norm_type, act_type),
         ]
@@ -647,13 +592,6 @@ class SUCode(nn.Module):
                 weight = self.weight_predictor(before_quant_feat).unsqueeze(2) # B x N x 1 x H x W
                 x = torch.sum(torch.mul(torch.stack(quant_feat_group).transpose(0, 1), weight), dim=1)
                 feat_before_decoder = x
-
-            # else:  # this enc_feat[i] no quantization, just use the features directly
-            #     # x = x
-            #     if self.LQ_stage and self.use_residual:
-            #         x = x + enc_feats[i]
-            #     else:
-            #         x = x 
 
             # decoder block for LQ image.
             x = self.decoder_group[i](x)
