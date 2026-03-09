@@ -36,10 +36,8 @@ This repository contains the official implementation of the following paper:
 </thead>
 <tbody>
 <tr>
-    <td>SUCode stage 2</td>
-    <th>[<a href="https://pan.baidu.com/s/1A3nXzvM7dLWm6OxAeIHWgw?pwd=nkbi">Baidu Disk (pwd: nkbi)</a>] </th>
-    <td>SUCode stage 3</td>
-    <th>[<a href="https://pan.baidu.com/s/1A3nXzvM7dLWm6OxAeIHWgw?pwd=nkbi">Baidu Disk (pwd: nkbi)</a>] </th>
+    <td>SUCode</td>
+    <th>[<a href="https://pan.baidu.com/s/17dFgDyLGH-GSajaQOCpDcA?pwd=icpg">Baidu Disk (pwd: icpg)</a>] </th>
 </tr>
 </tbody>
 </table>
@@ -50,7 +48,7 @@ This repository contains the official implementation of the following paper:
 checkpoints
     |- net_stage2_g_best_.pth
     |- net_stage2_d_best_.pth
-    |- net_sucode_d_best_.pth
+    |- net_sucode_g_best_.pth
 dataset
     |- test
         |- images
