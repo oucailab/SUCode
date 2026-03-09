@@ -129,9 +129,7 @@ class WeightPredictor(nn.Module):
 
         self.blocks = nn.ModuleList()
         self.blocks.append(SwinLayers(**swin_opts))
-
-        # self.blocks.append(TransformerLayers(input_resolution=(32, 32), embed_dim=256, depth=4, 
-        #                                      blk_depth=6, num_heads=8))
+                     
         # weight
         self.blocks.append(nn.Conv2d(in_channel, cls, kernel_size=1))
         if weight_softmax:
@@ -310,8 +308,6 @@ class MultiScaleEncoder(nn.Module):
             in_ch, out_ch = channel_query_dict[res], channel_query_dict[res // 2]
             tmp_down_block = [
                 nn.Conv2d(in_ch, out_ch, ksz, stride=2, padding=1),
-                # SPAMBlock(out_ch, out_ch),
-                # SPAMBlock(out_ch, out_ch),
                 ResBlock(out_ch, out_ch, norm_type, act_type),
                 ResBlock(out_ch, out_ch, norm_type, act_type),
             ]
@@ -322,12 +318,6 @@ class MultiScaleEncoder(nn.Module):
         if LQ_stage:
             ### Middle blocks (Transformer blocks).
             self.blocks.append(SwinLayers(**swin_opts))
-            # self.blocks.append(TransformerLayers(input_resolution=(32, 32), embed_dim=256, depth=4, 
-            #                                     blk_depth=6, num_heads=8))
-
-        #     ### Decoder blocks
-
-        # self.LQ_stage = LQ_stage
 
     def forward(self, input):
         outputs = []
@@ -358,8 +348,6 @@ class MultiScaleDecoder(nn.Module):
             self.upsampler.append(nn.Sequential(
                 nn.Upsample(scale_factor=2),
                 nn.Conv2d(in_channel, out_channel, 3, stride=1, padding=1),
-                # SPAMBlock(out_channel, out_channel),
-                # SPAMBlock(out_channel, out_channel),
                 ResBlock(out_channel, out_channel, norm_type, act_type),
                 ResBlock(out_channel, out_channel, norm_type, act_type),
             ))
@@ -540,10 +528,6 @@ class SUCode(nn.Module):
     def encode_and_decode(self, input, gt_aux=None, current_iter=None):
         enc_feats = self.multiscale_encoder(input.detach())
         enc_feats = enc_feats[::-1] # reverse the order of features
-        # if self.LQ_stage:
-        #     enc_feats = enc_feats[-3:]
-        # else:
-        #     enc_feats = enc_feats[::-1]
 
         if self.use_semantic_loss:
             with torch.no_grad():
