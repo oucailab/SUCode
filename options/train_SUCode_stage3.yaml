@@ -1,0 +1,172 @@
+# GENERATE TIME: Sun Nov 27 00:55:18 2022
+# CMD:
+# basicsr/train.py --local_rank=0 -opt options/train_AdaCode_stage3.yaml --launcher pytorch
+
+# general settings
+name: SUCode_stage3
+model_type: SemFeMaSRModel 
+scale: &upscale 1
+num_gpu: 1 # set num_gpu: 0 for cpu mode
+manual_seed: 0
+
+# dataset and data loader settings
+datasets:
+  train:
+    name: General_Image_Train
+    # type: BSRGANTrainDataset 
+    # datafile_gt: /newDisk/users/liukechun/research/FeMaSR/data/category_data/train/all_train.txt
+    type: PairedImageDataset  
+    # datafile_gt: ./data/category_data/train/all_train.txt
+    # datafile_lq: ./data/category_data/train/all_train_X2.txt
+    dataroot_gt:  ./dataset/train_val/reference
+    dataroot_lq:  ./dataset/train_val/images
+
+    io_backend:
+      type: disk
+ 
+    gt_size: 256
+    use_resize_crop: true
+    use_flip: true
+    use_rot: true
+
+    # data loader
+    use_shuffle: true
+    batch_size_per_gpu: &bsz 4 
+    num_worker_per_gpu: *bsz 
+    dataset_enlarge_ratio: 1
+
+    prefetch_mode: cpu
+    num_prefetch_queue: *bsz
+
+  val:
+    name: General_Image_Valid
+    type: PairedImageDataset
+    # datafile_gt: ./data/category_data/valid/all_valid.txt
+    # datafile_lq: ./data/category_data/valid/all_valid_X2.txt
+    dataroot_gt:  ./dataset/test/reference
+    dataroot_lq:  ./dataset/test/images
+
+    crop_eval_size: 256
+    # random_crop_eval_size: 384 
+    io_backend:
+      type: disk
+
+# network structures
+network_g:
+  type: UWCodeNet_Fusion_Freq
+  gt_resolution: 256
+  norm_type: 'gn'
+  act_type: 'silu'
+  scale_factor: *upscale
+  
+  ### TODO: modify the configuration carefully
+  AdaCode_stage: true
+  LQ_stage: true
+  Coder_stage: true
+  frozen_module_keywords: ['quantize', 'decoder_group', 'after_quant_group', 'out_conv']
+
+  weight_softmax: false
+
+network_d:
+  type: UNetDiscriminatorSN 
+  num_in_ch: 3
+
+# path
+path:
+  pretrain_network_hq: ./models/net_stage2_g_best_.pth
+  # pretrain_network_g: ~
+  pretrain_network_d: ./models/net_stage2_d_best_.pth
+  strict_load: false 
+  # resume_state: ~
+
+# training settings
+train:
+  optim_g:
+    type: Adam
+    lr: !!float 2e-4
+    weight_decay: 0
+    betas: [0.9, 0.99]
+  optim_d:
+    type: Adam
+    lr: !!float 4e-4
+    weight_decay: 0
+    betas: [0.9, 0.99]
+
+  scheduler:
+    type: MultiStepLR
+    milestones: [10000, 20000, 30000, 40000, 50000, 60000, 70000]
+    gamma: 0.9 
+
+  total_iter: 80000
+  warmup_iter: -1  # no warm up
+
+  # losses
+  pixel_opt:
+    type: L1Loss
+    loss_weight: 1.0 
+    reduction: mean
+
+  perceptual_opt:
+    type: LPIPSLoss
+    loss_weight: !!float 1.0 
+    
+  gan_opt:
+    type: GANLoss
+    gan_type: hinge
+    real_label_val: 1.0
+    fake_label_val: 0.0
+    loss_weight: 0.1
+
+  codebook_opt:
+    loss_weight: 1.0
+  
+  semantic_opt:
+    loss_weight: 0.1 
+
+  before_quant_opt: 
+    loss_weight: 0.0
+
+  after_quant_opt: 
+    loss_weight: 1.0
+
+  contrast_opt:
+    loss_weight: 1.0
+
+  net_d_iters: 1
+  net_d_init_iters: !!float 0 
+
+# validation settings·
+val:
+  val_freq: !!float 2e3
+  save_img: true
+
+  key_metric: psnr
+  metrics:
+    psnr: # metric name, can be arbitrary
+      type: psnr 
+      # crop_border: 4
+      # test_y_channel: true
+    ssim:
+      type: ssim 
+      # crop_border: 4
+      # test_y_channel: true
+    lpips:
+      type: lpips 
+      better: lower
+
+# logging settings
+logger:
+  print_freq: 100
+  save_checkpoint_freq: !!float 2e4
+  save_latest_freq: !!float 3e3
+  show_tf_imgs_freq: !!float 1e3
+  use_tb_logger: true
+
+# wandb:
+    # project: ESRGAN
+    # resume_id: ~
+
+# dist training settings
+# dist_params:
+  # backend: nccl
+  # port: 16500 #29500

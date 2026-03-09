@@ -1,0 +1,14 @@
+addict
+future
+lmdb
+setuptools>=57.0.0
+opencv-python-headless
+pyyaml
+requests
+scikit-image
+scikit-learn
+scipy
+tqdm
+yapf
+pyiqa
+einops
