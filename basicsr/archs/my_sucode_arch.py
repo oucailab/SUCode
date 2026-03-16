@@ -523,7 +523,7 @@ class SUCode(nn.Module):
         self.weight_cri = build_loss({'type': 'SoftCrossEntropy'})
 
         # Contrastive loss
-        # self.contrast_cri = build_loss({'type': 'ContrastiveLoss', 'batch_size': self.batch_size})
+        self.contrast_cri = build_loss({'type': 'ContrastiveLoss', 'batch_size': self.batch_size})
 
     def encode_and_decode(self, input, gt_aux=None, current_iter=None):
         enc_feats = self.multiscale_encoder(input.detach())
