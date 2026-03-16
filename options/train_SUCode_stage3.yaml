@@ -28,6 +28,7 @@ datasets:
     use_resize_crop: true
     use_flip: true
     use_rot: true
+    use_no_random_resize_crop: false
 
     # data loader
     use_shuffle: true
@@ -53,7 +54,7 @@ datasets:
 
 # network structures
 network_g:
-  type: UWCodeNet_Fusion_Freq
+  type: SUCode
   gt_resolution: 256
   norm_type: 'gn'
   act_type: 'silu'
